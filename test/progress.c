@@ -9,5 +9,8 @@ int main(int argc, char** argv) {
  
   for (size_t i = 0; i < test_size; i++) {
     progress_bar_step(&pb);
+    if (i == 5000) {
+       progress_bar_interrupt(&pb, "Half way");
+    }
   }
 }

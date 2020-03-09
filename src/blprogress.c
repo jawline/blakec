@@ -41,3 +41,8 @@ void progress_bar_step(struct progress_bar* bar) {
   bar->current += 1; 
   progress_bar_print(bar);
 }
+
+void progress_bar_interrupt(struct progress_bar* bar, char const* msg) {
+  printf("\n%s\n\r", msg);
+  progress_bar_print(bar);
+}
