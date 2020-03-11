@@ -1,5 +1,6 @@
 #include "blll.h"
 #include <assert.h>
+#include <stdio.h>
 
 CREATE_LINKED_LIST(int_list, int);
 
@@ -14,4 +15,5 @@ void test_prepend() {
 
 int main(int argc, char** argv) {
   test_prepend();
+  printf("Passed\n");
 }

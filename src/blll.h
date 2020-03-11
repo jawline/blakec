@@ -4,12 +4,12 @@
 #include <stdlib.h>
 
 #define LINKED_LIST_TYPE(NAME, TYPE) \
-typedef struct NAME##_elem { \
+struct NAME##_elem { \
   TYPE data; \
   struct NAME##_elem* next; \
   struct NAME##_elem* prev; \
 };\
-typedef struct NAME { \
+struct NAME { \
   struct NAME##_elem* start; \
   struct NAME##_elem* end; \
   size_t size; \
