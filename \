@@ -68,7 +68,8 @@ void test_concat() {
     assert(l1.data[i] == i * 100);
     assert(l1.data[i + 10000] == i);
   }
- 
+
+  printf("Freeing first list\n"); 
   int_list_free(&l1);
 }
 
