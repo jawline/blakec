@@ -75,6 +75,10 @@
   return r; \
 }
 
+/**
+ * Concat. Leave a small buffer (SIZE) after the concat rather than a large one.
+ * In many cases concat won't need extra space after.
+ */
 #define DYNAMIC_ARRAY_CONCAT(NAME, TYPE, SIZE) TYPE NAME##_concat(struct NAME* l, struct NAME* l2) { \
   l->capacity = (l->current + l2->current) + SIZE; \
   l->data = realloc(l->data, sizeof(TYPE) * l->capacity); \

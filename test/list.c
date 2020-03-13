@@ -68,7 +68,16 @@ void test_concat() {
     assert(l1.data[i] == i * 100);
     assert(l1.data[i + 10000] == i);
   }
- 
+
+  for (size_t i = 0; i < 100000; i++) {
+    int_list_push(&l1, i * 100);
+  }
+
+  for (size_t i = 0; i < 100000; i++) {
+    assert(l1.data[i + 20000] == i * 100);
+  }
+
+  printf("Freeing first list\n"); 
   int_list_free(&l1);
 }
 
