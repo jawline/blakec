@@ -32,6 +32,7 @@ void test_pop() {
  size_t last = int_list_size(&l);
 
  for (size_t i = 0; i < 100; i++) {
+   printf("");
    assert(int_list_pop(&l) == (99 - i) * 100);
    assert(int_list_size(&l) == last - 1);
    last = int_list_size(&l);

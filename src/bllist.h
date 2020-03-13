@@ -4,16 +4,22 @@
 #include <stdlib.h>
 #include <stddef.h>
 
+/**
+ * Dynamically allocated array structure.
+ * We store shrink_at in the struct rather than computing it to reduce the cost of checking
+ */
 #define DYNAMIC_ARRAY_TYPE(NAME, TYPE) struct NAME { \
   TYPE* data; \
   size_t current; \
   size_t max_capacity; \
+  size_t shrink_at; \
 };
 
 #define DYNAMIC_ARRAY_INIT(NAME) void NAME##_init(struct NAME* l) { \
   l->data = NULL; \
   l->current = 0; \
   l->max_capacity = 0; \
+  l->shrink_at = 0; \
 }
 
 #define DYNAMIC_ARRAY_FREE(NAME) void NAME##_free(struct NAME* l) { \
@@ -21,19 +27,35 @@
   NAME##_init(l); \
 }
 
+#define DYNAMIC_ARRAY_ADJUST_SHRINK(NAME, TYPE, SIZE) \
+  if (l->max_capacity > SIZE) { \
+    l->shrink_at = (l->max_capacity / 3); \
+  } else { \
+    l->shrink_at = 0; \
+  }
+
+/**
+ * Amortised cost increase and shrink. Double capacity - don't grow linearly.
+ */
 #define DYNAMIC_ARRAY_INCREASE(NAME, TYPE, SIZE) void NAME##_increase(struct NAME* l) { \
-  l->max_capacity += SIZE; \
+  if (l->max_capacity == 0) { \
+    l->max_capacity += SIZE; \
+  } else { \
+    l->max_capacity += l->max_capacity; \
+  } \
+  DYNAMIC_ARRAY_ADJUST_SHRINK(NAME, TYPE, SIZE) \
   l->data = realloc(l->data, sizeof(TYPE) * l->max_capacity); \
 }
 
 /**
  * Generate a dynamic array shrinking method for pop.
- * TODO: This will shrink the array to the current size 
+ * Amortised cost: Half array size if array consumption drops below 30%
  */
 #define DYNAMIC_ARRAY_SHRINK(NAME, TYPE, SIZE) void NAME##_shrink(struct NAME* l) { \
-  if (l->current + SIZE < l->max_capacity) { \
-    l->max_capacity -= SIZE; \
+  if (l->current < l->shrink_at) { \
+    l->max_capacity /= 2; \
     l->data = realloc(l->data, l->max_capacity * sizeof(TYPE)); \
+    DYNAMIC_ARRAY_ADJUST_SHRINK(NAME, TYPE, SIZE) \
   } \
 }
 
