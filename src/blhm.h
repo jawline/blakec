@@ -1,5 +1,5 @@
-#ifndef _BL_HM_H_
-#define _BL_HM_H_
+#ifndef _BLAKE_HM_H_
+#define _BLAKE_HM_H_
 #include "bllist.h"
 #include <stdbool.h>
 
