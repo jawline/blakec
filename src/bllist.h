@@ -7,12 +7,25 @@
 #include <stdbool.h>
 
 /**
+ * This can be overwritten to set custom behaviour when an illegal array index is used.
+ * If overwritten with a return statement users can set a 'default' behaviour for requests
+ * on elements not in the list.
+ * When overriding, either return a value or terminate, otherwise the list will be in an undefined state.
+ */
+/// Example override: #define LIST_ILLEGAL_OP(msg) return 0;
+#ifndef LIST_ILLEGAL_OP
+#define LIST_ILLEGAL_OP(msg) \
+  fprintf(stderr, "Exit because of illegal list operation: %s\n", msg); \
+  exit(EXIT_FAILURE);
+#endif
+
+/**
  * Dynamically allocated array structure.
  * The DYNAMIC_ARRAY macro declares a new data structure
  * to act as a dynamically allocated array.
  *
  * The array amortises allocation cost, which means that each
- * array expansion which requires a re-allocation doubles the 
+ * array expansion which requires a re-allocation doubles the
  * capacity of the array.
  *
  * This is a useful property because arrays larger
@@ -135,6 +148,9 @@
  */
 #define DYNAMIC_ARRAY_REMOVE(NAME, TYPE) \
   static inline TYPE NAME##_remove(struct NAME* l, size_t index) { \
+    if (index >= l->current) { \
+      LIST_ILLEGAL_OP("remove index out of bounds"); \
+    } \
     l->current -= 1; \
     TYPE r = l->data[index]; \
     memmove(&l->data[index], &l->data[index + 1], sizeof(TYPE) * (l->current - index)); \
@@ -149,6 +165,9 @@
  */
 #define DYNAMIC_ARRAY_POP(NAME, TYPE) \
   static inline TYPE NAME##_pop(struct NAME* l) { \
+    if (l->current == 0) { \
+      LIST_ILLEGAL_OP("pop an empty list"); \
+    } \
     l->current -= 1; \
     TYPE r = l->data[l->current]; \
     NAME##_shrink(l); \
