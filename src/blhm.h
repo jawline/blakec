@@ -164,7 +164,7 @@
     DATA_TYPE val; \
     if (NAME##_find(map, current_key, &val)) { \
       NAME##_remove(map, current_key); \
-      NAME##_set(map, current_key, val); \
+      NAME##_set(map, new_key, val); \
     } \
   }
 

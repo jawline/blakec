@@ -11,7 +11,7 @@ size_t int_map_hash(int m) {
   return m;
 }
 
-HASH_MAP(int_map, int, int, int_map_hash, cmp_key, 16, 128);
+HASH_MAP(int_map, int, int, int_map_hash, cmp_key, 16, 1024);
 
 struct int_map a;
 
@@ -76,7 +76,6 @@ void test_remove_nothing() {
   TEST_ASSERT_EQUAL(int_map_count(&a), 0);
 }
 
-
 void test_set_and_remove_nothing() {
   int_map_set(&a, 5, 50);
   int_map_remove(&a, 10);
@@ -108,6 +107,60 @@ void test_remove_from_loaded_buckets() {
   for (size_t i = 0; i < 100000; i++) {
     int* found_ptr = int_map_find_ptr(&a, i);
     if (i == 50000) {
+      TEST_ASSERT_EQUAL(found_ptr, NULL);
+    } else {
+      TEST_ASSERT_EQUAL(*found_ptr, i + 10);
+    }
+  }
+
+  TEST_ASSERT_EQUAL(int_map_count(&a), 99999);
+}
+
+void test_change_key() {
+  int_map_set(&a, 5, 50);
+  int_map_change_key(&a, 5, 10);
+  TEST_ASSERT_EQUAL(*int_map_find_ptr(&a, 10), 50);
+  TEST_ASSERT_EQUAL(int_map_count(&a), 1);
+}
+
+void test_change_missing_key() {
+  int_map_change_key(&a, 5, 10);
+  TEST_ASSERT_EQUAL(int_map_count(&a), 0);
+}
+
+void test_change_one_in_two() {
+  int_map_set(&a, 5, 50);
+  int_map_set(&a, 10, 100);
+  int_map_change_key(&a, 5, 15);
+  TEST_ASSERT_EQUAL(*int_map_find_ptr(&a, 15), 50);
+  TEST_ASSERT_EQUAL(int_map_count(&a), 2);
+}
+
+void test_change_replace() {
+  int_map_set(&a, 5, 50);
+  int_map_set(&a, 10, 100);
+  int_map_change_key(&a, 5, 10);
+  TEST_ASSERT_EQUAL(*int_map_find_ptr(&a, 10), 50);
+  TEST_ASSERT_EQUAL(int_map_count(&a), 1);
+}
+
+/// This test makes sure that data doesn't get corrupted even in loaded buckets
+void test_change_inloaded_buckets() {
+
+  // Load up a map
+  for (size_t i = 0; i < 100000; i++) {
+    int_map_set(&a, i, i + 10);
+  }
+
+  // Delete the middle element
+  int_map_change_key(&a, 50000, 0);
+
+  // Check for consistency
+  for (size_t i = 0; i < 100000; i++) {
+    int* found_ptr = int_map_find_ptr(&a, i);
+    if (i == 0) {
+      TEST_ASSERT_EQUAL(*found_ptr, 50010);
+    } else if (i == 50000) {
       TEST_ASSERT_EQUAL(found_ptr, NULL);
     } else {
       TEST_ASSERT_EQUAL(*found_ptr, i + 10);
