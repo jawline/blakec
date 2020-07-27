@@ -15,26 +15,28 @@ struct NAME { \
   size_t size; \
 };
 
-#define LINKED_LIST_INIT(NAME) void NAME##_init(struct NAME* l) { \
-  l->start = NULL; \
-  l->end = NULL; \
-  l->size = 0; \
-}
+#define LINKED_LIST_INIT(NAME) \
+  static inline void NAME##_init(struct NAME* l) { \
+    l->start = NULL; \
+    l->end = NULL; \
+    l->size = 0; \
+  }
 
-#define LINKED_LIST_PREPEND(NAME, TYPE) void NAME##_prepend(struct NAME* l, TYPE v) { \
-  struct NAME##_elem* new_node = malloc(sizeof(struct NAME##_elem)); \
-  new_node->prev = NULL; \
-  new_node->next = l->start; \
-  new_node->data = v; \
-  if (l->start) { \
-    l->start->prev = new_node; \
-  } \
-  l->start = new_node; \
-  if (!l->end) { \
-    l->end = new_node; \
-  } \
-  l->size += 1; \
-}
+#define LINKED_LIST_PREPEND(NAME, TYPE) \
+  static inline void NAME##_prepend(struct NAME* l, TYPE v) { \
+    struct NAME##_elem* new_node = malloc(sizeof(struct NAME##_elem)); \
+    new_node->prev = NULL; \
+    new_node->next = l->start; \
+    new_node->data = v; \
+    if (l->start) { \
+      l->start->prev = new_node; \
+    } \
+    l->start = new_node; \
+    if (!l->end) { \
+      l->end = new_node; \
+    } \
+    l->size += 1; \
+  }
 
 #define LINKED_LIST_ITER(NAME) struct NAME##_elem* NAME##_iter(struct NAME* l) { \
   return l->start; \

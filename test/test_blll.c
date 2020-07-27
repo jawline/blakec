@@ -12,8 +12,3 @@ void test_prepend() {
   assert(int_list_iter(&t) != NULL);
   assert(int_list_iter(&t)->data == 53);
 }
-
-int main(int argc, char** argv) {
-  test_prepend();
-  printf("Passed\n");
-}
