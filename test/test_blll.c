@@ -11,4 +11,5 @@ void test_prepend() {
   assert(int_list_size(&t) == 1);
   assert(int_list_iter(&t) != NULL);
   assert(int_list_iter(&t)->data == 53);
+  int_list_free(&t);
 }

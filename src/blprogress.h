@@ -7,41 +7,47 @@
 #include <unistd.h>
 #include <string.h>
 
-#define PROGRESS_BUFFER_SIZE 4096
+#define PROGRESS_MAX_BUFFER_SIZE 2048
 
 /**
  * Our progress bar prints an interactive bar to keep track of current progress.
  * It grabs the current terminal width to emit the correct size
  */
 struct progress_bar {
+  char buffer[PROGRESS_MAX_BUFFER_SIZE];
   size_t current;
   size_t total;
 };
 
-#define PRG_MIN(A, B) A < B ? A : B
-
 static inline void progress_bar_print(struct progress_bar* bar) {
-  struct winsize w;
-  ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
 
-  char col_buffer[PROGRESS_BUFFER_SIZE];
-  size_t col_size = PRG_MIN(PROGRESS_BUFFER_SIZE, w.ws_col);
-  memset(col_buffer, ' ', col_size);
+  //Assume 80 line col if we can't ask for the size
+  struct winsize w;
+  if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &w) < 0) {
+    w.ws_col = 80;
+  }
+
+  size_t col_size = PROGRESS_MAX_BUFFER_SIZE < w.ws_col ? PROGRESS_MAX_BUFFER_SIZE : w.ws_col;
+
+  memset(bar->buffer, 0, PROGRESS_MAX_BUFFER_SIZE);
 
   float finished_percent = (float) bar->current / (float) bar->total;
 
-  snprintf(col_buffer, PROGRESS_BUFFER_SIZE, "%.0f%% (%lu/%lu) ", finished_percent * 100.0, bar->current, bar->total);
+  int bar_start = snprintf(bar->buffer, col_size, "%.0f%% (%lu/%lu) ", finished_percent * 100.0, bar->current, bar->total);
 
-  size_t bar_start = strlen(col_buffer);
+  if (bar_start < 0) {
+    // Cant fit into bar
+    return;
+  }
 
   if (bar_start < col_size) {
     size_t progress_size = col_size - bar_start;
     int proportion = finished_percent * progress_size;
-    memset(col_buffer + bar_start, '#', proportion);
+    memset(bar->buffer + bar_start, '#', proportion);
   }
 
   putc('\r', stdout);
-  fwrite(col_buffer, col_size, 1, stdout);
+  fwrite(bar->buffer, col_size, 1, stdout);
   fflush(stdout);
 }
 

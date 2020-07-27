@@ -47,11 +47,12 @@
  * elements can be added.
  * NOTE: _init must be called before the array can be used.
  */
-#define DYNAMIC_ARRAY_INIT(NAME) \
+#define DYNAMIC_ARRAY_INIT(NAME, TYPE, SIZE) \
   static void NAME##_init(struct NAME* l) { \
-    /* Initial allocation and parameters are set on first push. */ \
-    /* To init an array, set all parameters to NULL */ \
     memset(l, 0, sizeof(struct NAME)); \
+    l->capacity = SIZE; \
+    l->shrink_at = 0; \
+    l->data = malloc(sizeof(TYPE) * l->capacity); \
   }
 
 /**
@@ -86,16 +87,12 @@
  */
 #define DYNAMIC_ARRAY_INCREASE(NAME, TYPE, SIZE) \
   static inline void NAME##_increase(struct NAME* l) { \
-    /* On initial increase capacity will be zero, so we set it to SIZE */ \
-    if (l->capacity == 0) { \
-      l->capacity = SIZE; \
-    } else { \
-      /* If this isn't the initial increase then we double capacity */ \
-      l->capacity += l->capacity; \
-    } \
+    /* Increase doubles capacity */ \
+    l->capacity += l->capacity; \
     DYNAMIC_ARRAY_ADJUST_SHRINK(NAME, TYPE, SIZE) \
     /* After deciding on the new capacity we re-allocate the backing array */ \
-    l->data = realloc(l->data, sizeof(TYPE) * l->capacity); \
+    TYPE* new_data = realloc(l->data, sizeof(TYPE) * l->capacity); \
+    l->data = new_data; \
   }
 
 /**
@@ -216,7 +213,7 @@
 
 #define DYNAMIC_ARRAY(name, type, block_size) \
   DYNAMIC_ARRAY_TYPE(name, type); \
-  DYNAMIC_ARRAY_INIT(name) \
+  DYNAMIC_ARRAY_INIT(name, type, block_size) \
   DYNAMIC_ARRAY_FREE(name) \
   DYNAMIC_ARRAY_INCREASE(name, type, block_size) \
   DYNAMIC_ARRAY_PUSH(name, type) \

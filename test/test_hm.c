@@ -1,7 +1,6 @@
 #include "unity.h"
 #include "blhm.h"
 #include <stdio.h>
-#include <assert.h>
 
 int cmp_key(int m, int r) {
   return m - r;
@@ -19,7 +18,7 @@ void setUp(void) {
   int_map_init(&a);
 }
 
-void teatDown(void) {
+void tearDown(void) {
   int_map_free(&a);
 }
 
@@ -96,24 +95,24 @@ void test_add_two_remove_one() {
 void test_remove_from_loaded_buckets() {
 
   // Load up a map
-  for (size_t i = 0; i < 100000; i++) {
+  for (size_t i = 0; i < 10000; i++) {
     int_map_set(&a, i, i + 10);
   }
 
   // Delete the middle element
-  int_map_remove(&a, 50000);
+  int_map_remove(&a, 5000);
 
   // Check for consistency
-  for (size_t i = 0; i < 100000; i++) {
+  for (size_t i = 0; i < 10000; i++) {
     int* found_ptr = int_map_find_ptr(&a, i);
-    if (i == 50000) {
+    if (i == 5000) {
       TEST_ASSERT_EQUAL(found_ptr, NULL);
     } else {
       TEST_ASSERT_EQUAL(*found_ptr, i + 10);
     }
   }
 
-  TEST_ASSERT_EQUAL(int_map_count(&a), 99999);
+  TEST_ASSERT_EQUAL(int_map_count(&a), 9999);
 }
 
 void test_change_key() {
@@ -148,26 +147,26 @@ void test_change_replace() {
 void test_change_inloaded_buckets() {
 
   // Load up a map
-  for (size_t i = 0; i < 100000; i++) {
+  for (size_t i = 0; i < 10000; i++) {
     int_map_set(&a, i, i + 10);
   }
 
   // Delete the middle element
-  int_map_change_key(&a, 50000, 0);
+  int_map_change_key(&a, 5000, 0);
 
   // Check for consistency
-  for (size_t i = 0; i < 100000; i++) {
+  for (size_t i = 0; i < 10000; i++) {
     int* found_ptr = int_map_find_ptr(&a, i);
     if (i == 0) {
-      TEST_ASSERT_EQUAL(*found_ptr, 50010);
-    } else if (i == 50000) {
+      TEST_ASSERT_EQUAL(*found_ptr, 5010);
+    } else if (i == 5000) {
       TEST_ASSERT_EQUAL(found_ptr, NULL);
     } else {
       TEST_ASSERT_EQUAL(*found_ptr, i + 10);
     }
   }
 
-  TEST_ASSERT_EQUAL(int_map_count(&a), 99999);
+  TEST_ASSERT_EQUAL(int_map_count(&a), 9999);
 }
 
 /// Sanity test that we haven't bungled up globals and can have coexisting maps
@@ -204,46 +203,46 @@ void test_init_many() {
   TEST_ASSERT_EQUAL(int_map_count(&b), 100);
   TEST_ASSERT_EQUAL(int_map_count(&c), 1000);
   TEST_ASSERT_EQUAL(int_map_count(&d), 10000);
+
+  int_map_free(&b);
+  int_map_free(&c);
+  int_map_free(&d);
 }
 
-void test_rest() {
-  printf("Creating hashmap\n");
+void test_general_usage() {
 
   int_map_set(&a, 5, 10);
   int_map_set(&a, 10, 10);
   int_map_set(&a, 5, 50);
   int_map_set(&a, 10, 5);
 
-  assert(*int_map_find_ptr(&a, 5) == 50);
-  assert(*int_map_find_ptr(&a, 10) == 5);
-  assert(!int_map_find_ptr(&a, 13210));
-  assert(!int_map_find_ptr(&a, 132111));
+  TEST_ASSERT_EQUAL(*int_map_find_ptr(&a, 5), 50);
+  TEST_ASSERT_EQUAL(*int_map_find_ptr(&a, 10), 5);
+  TEST_ASSERT_EQUAL(int_map_find_ptr(&a, 13210), NULL);
+  TEST_ASSERT_EQUAL(int_map_find_ptr(&a, 132111), NULL);
 
   int value;
 
-  assert(int_map_find(&a, 5, &value));
-  assert(value == 50);
-  assert(int_map_find(&a, 10, &value));
-  assert(value == 5);
-  assert(!int_map_find(&a, 24123123, &value));
-  assert(!int_map_find(&a, 231312, &value));
+  TEST_ASSERT_EQUAL(int_map_find(&a, 5, &value), true);
+  TEST_ASSERT_EQUAL(value, 50);
+  TEST_ASSERT_EQUAL(int_map_find(&a, 10, &value), true);
+  TEST_ASSERT_EQUAL(value, 5);
+  TEST_ASSERT_EQUAL(int_map_find(&a, 24123123, &value), false);
+  TEST_ASSERT_EQUAL(int_map_find(&a, 231312, &value), false);
 
   int_map_remove(&a, 5);
-  assert(!int_map_find_ptr(&a, 5));
-  assert(*int_map_find_ptr(&a, 10) == 5);
+  TEST_ASSERT_EQUAL(int_map_find_ptr(&a, 5), NULL);
+  TEST_ASSERT_EQUAL(*int_map_find_ptr(&a, 10), 5);
 
   printf("Remove 5\n");
 
   int_map_remove(&a, 5);
-  assert(!int_map_find_ptr(&a, 5));
-  assert(*int_map_find_ptr(&a, 10) == 5);
+  TEST_ASSERT_EQUAL(int_map_find_ptr(&a, 5), NULL);
+  TEST_ASSERT_EQUAL(*int_map_find_ptr(&a, 10), 5);
 
   printf("Remove 10\n");
 
   int_map_remove(&a, 10);
-  assert(!int_map_find_ptr(&a, 10));
-  assert(!int_map_find_ptr(&a, 10));
-
-  int_map_free(&a);
-  printf("Done\n");
+  TEST_ASSERT_EQUAL(int_map_find_ptr(&a, 10), NULL);
+  TEST_ASSERT_EQUAL(int_map_find_ptr(&a, 10), NULL);
 }
