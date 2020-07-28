@@ -170,7 +170,7 @@
 
 /**
  * This macro creates a method which will delete any elements in the map which match a predicate.
- * 
+ *
  * The delete callback is called once for every single element in the hashmap. If the callback
  * returns true for a given element then that element will be removed from the map.
  *
