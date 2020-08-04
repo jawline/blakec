@@ -250,3 +250,33 @@ void test_general_usage() {
   TEST_ASSERT_EQUAL(int_map_find_ptr(&a, 10), NULL);
   TEST_ASSERT_EQUAL(int_map_find_ptr(&a, 10), NULL);
 }
+
+int touched = 0;
+int deleted = 0;
+
+bool delete_callback(struct int_map_entry* v) {
+  touched += 1;
+  return v->key % 2;
+}
+
+void post_delete_callback(struct int_map_entry* v) {
+  deleted += 1;
+}
+
+void test_delete_matching() {
+
+  // Load up a map
+  for (size_t i = 0; i < 10000; i++) {
+    int_map_set(&a, i, i);
+  }
+
+  int_map_delete_matching(&a,
+    delete_callback,
+    post_delete_callback
+  );
+
+  //Test that we deleted every even key and that the map is smaller because of it
+  TEST_ASSERT_EQUAL(touched, 10000);
+  TEST_ASSERT_EQUAL(deleted, 5000);
+  TEST_ASSERT_EQUAL(int_map_count(&a), 5000);
+}
