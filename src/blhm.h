@@ -15,7 +15,7 @@
  *
  * POTENTIAL TODO: It would not be a stretch to include a version of insert that sorts lists and
  * enables binary search. We may add this later.
- * 
+ *
  * This implementation uses macros to construct a typed hash-map implementation for a
  * given key-value pair. It uses a user-supplied hashing function, key type and value type to create
  * a map structure, entry structure, and a structure for the dynamic array which backs buckets (using
@@ -25,9 +25,8 @@
  * of using void* to store entries. This has two key advantages, this map can store structures
  * directly, without requiring memory allocation for them, and the generated hash methods are
  * type safe, in that since you do not cast on insert and get the compiler will complain if you
- * insert an element of the wrong type to a list. 
+ * insert an element of the wrong type to a list.
  *
- * PAIN POINT: bucket_count is immutable and changing it will break iterating on the map.
  */
 #define HASH_MAP_TYPE(NAME, KEY_TYPE, DATA_TYPE, BUCKETS, BLOCK_SIZE) \
   typedef struct NAME##_entry { \
@@ -37,7 +36,6 @@
   DYNAMIC_ARRAY(NAME##_bucket, struct NAME##_entry, BLOCK_SIZE); \
   typedef struct NAME { \
     struct NAME##_bucket buckets[BUCKETS]; \
-    size_t bucket_count; \
   } NAME##_t;
 
 /**
@@ -49,7 +47,6 @@
     for (size_t i = 0; i < BUCKETS; i++) { \
       NAME##_bucket_init(&map->buckets[i]); \
     } \
-    map->bucket_count = BUCKETS; \
   }
 
 /**
@@ -200,6 +197,11 @@
     return sum_count; \
   }
 
+#define HASH_MAP_NUM_BUCKETS(NAME, BUCKETS) \
+  static inline size_t NAME##_num_buckets(struct NAME* l) { \
+    return BUCKETS; \
+  }
+
 #define HASH_MAP(NAME, KEY_TYPE, DATA_TYPE, HASH_FN, CMP_FN, BUCKETS, BLOCK_SIZE) \
   HASH_MAP_TYPE(NAME, KEY_TYPE, DATA_TYPE, BUCKETS, BLOCK_SIZE); \
   HASH_MAP_INIT(NAME, BUCKETS) \
@@ -211,6 +213,7 @@
   HASH_MAP_DELETE_MATCHING(NAME, DATA_TYPE, BUCKETS) \
   HASH_MAP_SET(NAME, KEY_TYPE, DATA_TYPE) \
   HASH_MAP_CHANGE_KEY(NAME, KEY_TYPE, DATA_TYPE) \
+  HASH_MAP_NUM_BUCKETS(NAME, BUCKETS) \
   HASH_MAP_COUNT(NAME, BUCKETS)
 
 #endif

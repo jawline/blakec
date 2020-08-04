@@ -22,6 +22,10 @@ void tearDown(void) {
   int_map_free(&a);
 }
 
+void test_num_buckets() {
+  TEST_ASSERT_EQUAL(int_map_num_buckets(&a), 16);
+}
+
 void test_set_and_find() {
   int_map_set(&a, 5, 50);
 
