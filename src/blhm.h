@@ -4,7 +4,7 @@
 #include <stdbool.h>
 
 /**
- * This hash map implementation is backed by dynamically allocated arrays, and used a
+ * This hash map implementation is backed by dynamically allocated arrays, and uses a
  * fixed number of buckets. This is driven by the observation in many of our use cases
  * that when map sizes are relatively small (<60k elements) using a more complex implementation
  * does not improve performance but does make debugging more difficult.
