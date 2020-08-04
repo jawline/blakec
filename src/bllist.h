@@ -19,6 +19,12 @@
   exit(EXIT_FAILURE);
 #endif
 
+#ifndef LIST_ILLEGAL_CONCAT
+#define LIST_ILLEGAL_CONCAT(msg) \
+  fprintf(stderr, "Exit because of illegal list concatenation: %s\n", msg); \
+  exit(EXIT_FAILURE);
+#endif
+
 /**
  * Dynamically allocated array structure.
  * The DYNAMIC_ARRAY macro declares a new data structure
@@ -83,13 +89,13 @@
  * INTERNAL USE MACRO: DO NOT USE
  * This macro adjusts the shrink size after the array has changed in capacity.
  */
-#define DYNAMIC_ARRAY_ADJUST_SHRINK(NAME, TYPE, SIZE) \
+#define DYNAMIC_ARRAY_ADJUST_SHRINK(LISTVAR, NAME, TYPE, SIZE) \
   /* We only shrink an array up to the user specified minimum size. */ \
   /* If shrink_at is zero the array will never be shrunk */ \
-  if (l->capacity > SIZE) { \
-    l->shrink_at = (l->capacity / 3); \
+  if (LISTVAR->capacity > SIZE) { \
+    LISTVAR->shrink_at = (LISTVAR->capacity / 3); \
   } else { \
-    l->shrink_at = 0; \
+    LISTVAR->shrink_at = 0; \
   }
 
 /**
@@ -102,7 +108,7 @@
   static inline void NAME##_increase(struct NAME* l) { \
     /* Increase doubles capacity */ \
     l->capacity += l->capacity; \
-    DYNAMIC_ARRAY_ADJUST_SHRINK(NAME, TYPE, SIZE) \
+    DYNAMIC_ARRAY_ADJUST_SHRINK(l, NAME, TYPE, SIZE) \
     /* After deciding on the new capacity we re-allocate the backing array */ \
     TYPE* new_data = realloc(l->data, sizeof(TYPE) * l->capacity); \
     l->data = new_data; \
@@ -118,13 +124,13 @@
  */
 #define DYNAMIC_ARRAY_SHRINK(NAME, TYPE, SIZE) \
   static inline void NAME##_shrink(struct NAME* l) { \
-    if (l->current < l->shrink_at) { \
+    if (l->shrink_at && l->current <= l->shrink_at) { \
       l->capacity /= 2; \
       if (l->capacity < SIZE) { \
         l->capacity = SIZE; \
       } \
       l->data = realloc(l->data, l->capacity * sizeof(TYPE)); \
-      DYNAMIC_ARRAY_ADJUST_SHRINK(NAME, TYPE, SIZE) \
+      DYNAMIC_ARRAY_ADJUST_SHRINK(l, NAME, TYPE, SIZE) \
     } \
   }
 
@@ -213,12 +219,15 @@
  * expansion.
  */
 #define DYNAMIC_ARRAY_CONCAT(NAME, TYPE, SIZE) \
-  static inline void NAME##_concat(struct NAME* l, struct NAME* l2) { \
-    l->capacity = (l->current + l2->current) + SIZE; \
-    l->data = realloc(l->data, sizeof(TYPE) * l->capacity); \
-    memcpy(l->data + l->current, l2->data, l2->current * sizeof(TYPE)); \
-    l->current += l2->current; \
-    DYNAMIC_ARRAY_ADJUST_SHRINK(NAME, TYPE, SIZE); \
+  static inline void NAME##_concat(struct NAME* l1, struct NAME* l2) { \
+    if (!l1 || !l1->data || !l2 || !l2->data) { \
+      LIST_ILLEGAL_CONCAT("invalid pointer to list or uninitialized list"); \
+    } \
+    l1->capacity = (l1->current + l2->current) + SIZE; \
+    l1->data = realloc(l1->data, sizeof(TYPE) * l1->capacity); \
+    memcpy(l1->data + l1->current, l2->data, l2->current * sizeof(TYPE)); \
+    l1->current += l2->current; \
+    DYNAMIC_ARRAY_ADJUST_SHRINK(l1, NAME, TYPE, SIZE); \
   }
 
 /**

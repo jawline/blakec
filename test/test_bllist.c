@@ -3,9 +3,8 @@
 size_t illegal_ops = 0;
 
 #define LIST_ILLEGAL_OP(msg) illegal_ops += 1; return 0;
-
+#define LIST_ILLEGAL_CONCAT(msg) illegal_ops += 1; return;
 #include "bllist.h"
-
 DYNAMIC_ARRAY(int_list, int, 32);
 
 struct int_list l1;
@@ -26,6 +25,24 @@ void test_push() {
   int_list_push(&l1, 5042);
   TEST_ASSERT_EQUAL(l1.data[0], 5042);
   TEST_ASSERT_EQUAL(int_list_size(&l1), 1);
+}
+
+void test_push_pop_push() {
+  int_list_push(&l1, 5042);
+  TEST_ASSERT_EQUAL(int_list_pop(&l1), 5042);
+  int_list_push(&l1, 1096);
+  TEST_ASSERT_EQUAL(l1.data[0], 1096);
+  TEST_ASSERT_EQUAL(int_list_size(&l1), 1);
+  TEST_ASSERT_EQUAL(int_list_pop(&l1), 1096);
+}
+
+void test_push_pop_pop_triggers_illegal_op() {
+  int_list_push(&l1, 5042);
+  TEST_ASSERT_EQUAL(int_list_pop(&l1), 5042);
+  TEST_ASSERT_EQUAL(int_list_size(&l1), 0);
+  TEST_ASSERT_EQUAL(illegal_ops, 0);
+  int_list_pop(&l1);
+  TEST_ASSERT_EQUAL(illegal_ops, 1);
 }
 
 void test_pop() {
@@ -167,4 +184,91 @@ void test_concat() {
   for (size_t i = 0; i < 100000; i++) {
     TEST_ASSERT_EQUAL(l1.data[i + 20000], i * 100);
   }
+}
+
+void test_concat_safety_check() {
+
+  int_list_concat(&l1, &l2);
+  TEST_ASSERT_EQUAL(illegal_ops, 0);
+
+  int_list_concat(&l1, NULL);
+  TEST_ASSERT_EQUAL(illegal_ops, 1);
+
+  int_list_concat(&l2, NULL);
+  TEST_ASSERT_EQUAL(illegal_ops, 2);
+
+  int_list_concat(NULL, &l1);
+  TEST_ASSERT_EQUAL(illegal_ops, 3);
+
+  int_list_concat(NULL, &l2);
+  TEST_ASSERT_EQUAL(illegal_ops, 4);
+
+  struct int_list ltemp = { 0 };
+
+  int_list_concat(&l1, &ltemp);
+  TEST_ASSERT_EQUAL(illegal_ops, 5);
+}
+
+void test_grows() {
+  TEST_ASSERT_EQUAL(l1.capacity, 32);
+  size_t cap = l1.capacity;
+  for (size_t i = 0; i < cap + 1; i++) {
+    int_list_push(&l1, 0);
+  }
+  TEST_ASSERT_EQUAL(l1.capacity, 64);
+}
+
+void test_shrink() {
+  TEST_ASSERT_EQUAL(l1.capacity, 32);
+
+  size_t initial_shrink = l1.shrink_at;
+  size_t cap = l1.capacity;
+
+  TEST_ASSERT_EQUAL(initial_shrink, 0);
+
+  for (size_t i = 0; i < cap + 1; i++) {
+    int_list_push(&l1, 0);
+  }
+
+  size_t first_shrink = l1.shrink_at;
+  TEST_ASSERT_LESS_THAN(l1.current, l1.shrink_at);
+
+  size_t cap2 = l1.capacity;
+
+  for (size_t i = cap; i < cap2 + 1; i++) {
+    int_list_push(&l1, 0);
+  }
+
+  TEST_ASSERT_LESS_THAN(l1.current, l1.shrink_at);
+  TEST_ASSERT_LESS_THAN(l1.shrink_at, first_shrink);
+
+  size_t shrink_two = l1.shrink_at;
+  size_t amount_to_shrink = l1.current - l1.shrink_at;
+
+  for (size_t i = 0; i < amount_to_shrink; i++) {
+    int_list_pop(&l1);
+  }
+
+  // Should have now shrunk to half the size
+  TEST_ASSERT_EQUAL(l1.shrink_at, first_shrink);
+  TEST_ASSERT_EQUAL(cap2, l1.capacity);
+
+  amount_to_shrink = l1.current - l1.shrink_at;
+
+  for (size_t i = 0; i < amount_to_shrink; i++) {
+    int_list_pop(&l1);
+  }
+
+  // Now that capacity = SIZE make sure that
+  // the capacity does not change again
+
+  TEST_ASSERT_EQUAL(l1.shrink_at, 0);
+  TEST_ASSERT_EQUAL(l1.capacity, 32);
+
+  while (int_list_size(&l1)) {
+    int_list_pop(&l1);
+  }
+
+  TEST_ASSERT_EQUAL(l1.shrink_at, 0);
+  TEST_ASSERT_EQUAL(l1.capacity, 32);
 }
